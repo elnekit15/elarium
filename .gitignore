@@ -1,0 +1,28 @@
+## Build output
+bin/
+obj/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userprefs
+
+## Rider
+.idea/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Secrets — НЕ ігноруємо appsettings.json, він потрібен для Railway
+## Але якщо репозиторій ПУБЛІЧНИЙ — заміни секрети на порожні рядки
+## і постав реальні значення як змінні середовища в Railway
+
+## Logs
+*.log
+logs/
+
+## Temporary
+*.tmp
+*.temp

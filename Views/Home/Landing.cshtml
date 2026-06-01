@@ -1,0 +1,53 @@
+@model List<DesignerStore.Models.Product>
+@{ ViewData["Title"] = "ELARIUM"; }
+
+<div class="hero-banner">
+    <video autoplay loop muted playsinline>
+        <source src="/images/banner.mp4" type="video/mp4">
+    </video>
+    <div class="hero-title-wrap">
+        <h1 class="hero-title">ELARIUM</h1>
+    </div>
+</div>
+
+<section class="defile-section">
+    <a asp-controller="Defile" asp-action="Index" class="defile-link">
+        <img src="/images/defile.jpeg" alt="Дефіле" class="defile-img">
+        <div class="defile-overlay">
+            <span class="defile-text">Нова Колекція</span>
+        </div>
+    </a>
+</section>
+
+<section class="roller-section">
+    <div class="roller-heading">
+        <h2 class="roller-title">Колекційний ассортимент</h2>
+        <a asp-controller="Home" asp-action="Index" class="roller-all-link">Весь ассортимент</a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="roller-body">
+            <button class="roller-arrow roller-prev" id="roller-prev" aria-label="Попередній" disabled>&#8249;</button>
+            <div class="roller-track-outer" id="roller-track-outer">
+                <div class="roller-track" id="roller-track">
+                    @foreach (var item in Model)
+                    {
+                        var hoverImg = item.Images.FirstOrDefault()?.Url ?? item.ImageUrl;
+                        <a asp-controller="Home" asp-action="Details" asp-route-id="@item.Id" class="roller-card">
+                            <div class="roller-img-wrap">
+                                <img class="roller-img-primary" src="@item.ImageUrl" alt="@item.Name">
+                                <img class="roller-img-hover" src="@hoverImg" alt="@item.Name">
+                            </div>
+                            <div class="roller-card-info">
+                                <p class="roller-card-name">@item.Name</p>
+                                <p class="roller-card-price">@item.Price грн</p>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+            <button class="roller-arrow roller-next" id="roller-next" aria-label="Наступний">&#8250;</button>
+        </div>
+    }
+</section>

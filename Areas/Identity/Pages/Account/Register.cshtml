@@ -1,0 +1,47 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "РЕЄСТРАЦІЯ";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4 border p-4 shadow-sm">
+            
+            <h2 class="text-center mb-4" style="font-weight: 400; letter-spacing: 2px;">@ViewData["Title"]</h2>
+            
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Email" class="form-control rounded-0 border-dark" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    <label asp-for="Input.Email" class="text-muted">Електронна пошта</label>
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.Password" class="form-control rounded-0 border-dark" autocomplete="new-password" aria-required="true" placeholder="password" />
+                    <label asp-for="Input.Password" class="text-muted">Пароль</label>
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+                
+                <div class="form-floating mb-4">
+                    <input asp-for="Input.ConfirmPassword" class="form-control rounded-0 border-dark" autocomplete="new-password" aria-required="true" placeholder="password" />
+                    <label asp-for="Input.ConfirmPassword" class="text-muted">Підтвердіть пароль</label>
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                </div>
+                
+                <button id="registerSubmit" type="submit" class="w-100 btn py-3 btn-dark rounded-0 text-white fw-bold" style="letter-spacing: 1.5px;">СТВОРИТИ АКАУНТ</button>
+                
+                <div class="mt-4 text-center small">
+                    <p>Вже є акаунт? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" class="text-dark fw-bold text-decoration-none border-bottom border-dark pb-1">Увійти</a></p>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

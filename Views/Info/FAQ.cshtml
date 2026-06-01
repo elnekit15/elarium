@@ -1,0 +1,125 @@
+@{ ViewData["Title"] = "Поширені питання"; }
+
+<div class="info-page">
+    <h1>Поширені питання</h1>
+
+    <div class="faq-list">
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Яким чином здійснюється доставка?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Доставка здійснюється по всій Україні через Нову Пошту та Укрпошту. Термін доставки — 1–3 робочі дні.
+                    При замовленні від 5 000 грн доставка безкоштовна. Для замовлень до 5 000 грн вартість доставки
+                    визначається тарифами перевізника.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Чи можна повернути або обміняти товар?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Так, ми приймаємо повернення протягом 14 днів з моменту отримання товару. Виріб має бути
+                    у первісному стані: з етикетками, без слідів носіння. Витрати на зворотню доставку
+                    несе покупець. Обмін на інший розмір — безкоштовно (за наявності товару на складі).
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Як підібрати правильний розмір?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    На кожній сторінці товару вказано доступні розміри. Наш одяг відповідає стандартним
+                    євророзмірам: S (44 UA), M (46 UA), L (48 UA), XL (50 UA). Якщо ви між розмірами —
+                    рекомендуємо обирати більший. З питань розмірів пишіть нам: hello@elarium.ua.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Які способи оплати ви приймаєте?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Ми приймаємо оплату банківською картою (Visa, Mastercard), через Strip / WayForPay.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Як доглядати за виробами ELARIUM?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Рекомендуємо прання при температурі 30°C у делікатному режимі або ручне прання.
+                    Не використовуйте відбілювач. Прасуйте через вологу тканину. Детальні інструкції
+                    вказано на ярлику кожного виробу.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Чи є у вас офлайн-шоурум?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Так! Наш шоурум розташований у Києві на вул. Хрещатик, 12.
+                    Години роботи: пн–сб 11:00–20:00, нд 12:00–18:00.
+                    Рекомендуємо заздалегідь записатись, щоб отримати персональну консультацію.
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <button class="faq-question">
+                Як дізнатись про нові надходження?
+                <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+                <div class="faq-answer-inner">
+                    Підписуйтесь на наш Instagram <strong>@@elarium</strong> та Telegram-канал <strong>@@elarium_ua</strong>.
+                    Там ми першими публікуємо фото нових колекцій, оголошуємо про дати дефіле та проводимо конкурси.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const isOpen   = btn.classList.contains('open');
+            const answer   = btn.nextElementSibling;
+
+            document.querySelectorAll('.faq-question.open').forEach(q => {
+                q.classList.remove('open');
+                q.nextElementSibling.style.maxHeight = null;
+            });
+
+            if (!isOpen) {
+                btn.classList.add('open');
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+            }
+        });
+    });
+</script>
+}

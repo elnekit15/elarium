@@ -1,0 +1,41 @@
+@{ ViewData["Title"] = "Відстеження замовлення"; }
+
+<div class="container mt-5 mb-5" style="max-width:480px;">
+
+    <div class="text-center mb-5">
+        <h2 style="font-weight:300;letter-spacing:3px;">ВІДСТЕЖИТИ ЗАМОВЛЕННЯ</h2>
+        <p class="text-muted small mt-2">Введіть номер замовлення та email, вказаний при оформленні</p>
+    </div>
+
+    <form asp-action="Track" method="post">
+        @Html.AntiForgeryToken()
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div class="alert alert-danger rounded-0 py-2 small mb-3">@err.ErrorMessage</div>
+            }
+        }
+
+        <div class="mb-3">
+            <label class="form-label small text-uppercase" style="letter-spacing:1px;">Номер замовлення</label>
+            <input type="number" name="orderId" class="form-control rounded-0" placeholder="123" required min="1" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label small text-uppercase" style="letter-spacing:1px;">Email</label>
+            <input type="email" name="email" class="form-control rounded-0" placeholder="email@example.com" required />
+        </div>
+
+        <button type="submit" class="btn btn-dark rounded-0 w-100" style="height:48px;letter-spacing:2px;font-size:0.75rem;">
+            ПЕРЕВІРИТИ СТАТУС
+        </button>
+    </form>
+
+    <div class="text-center mt-4">
+        <a asp-controller="Home" asp-action="Landing" class="text-muted small text-decoration-none">
+            ← Повернутись на головну
+        </a>
+    </div>
+</div>

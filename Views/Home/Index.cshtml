@@ -1,0 +1,186 @@
+@model IEnumerable<DesignerStore.Models.Product>
+@{
+    var cSort       = ViewBag.CurrentSort     as string;
+    var cStock      = ViewBag.CurrentStock    as string;
+    var cSize       = ViewBag.CurrentSize     as string;
+    var cSearch     = ViewBag.CurrentSearch   as string;
+    var cCategory   = ViewData["CurrentCategory"] as string;
+    var cGender     = ViewBag.CurrentGender   as string;
+    decimal? cMin   = ViewBag.CurrentPriceMin;
+    decimal? cMax   = ViewBag.CurrentPriceMax;
+    bool filterActive = ViewBag.FilterActive == true;
+    var wishlistIds = ViewBag.WishlistIds as HashSet<int> ?? new HashSet<int>();
+    ViewData["Title"] = "Колекція";
+}
+
+<div class="products-section">
+    <div class="products-header">
+        <span class="products-label">@(string.IsNullOrEmpty(cCategory) ? "Колекція" : cCategory)</span>
+        <button id="filter-btn" class="filter-toggle-btn @(filterActive ? "filter-active" : "")">
+            Фільтр&nbsp;&#9776;
+        </button>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <h3 style="font-weight:300;letter-spacing:2px;">Товарів не знайдено</h3>
+            <a asp-action="Index" class="btn btn-outline-dark mt-3">Скинути фільтри</a>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+            @foreach (var item in Model)
+            {
+                var hoverImg  = item.Images.FirstOrDefault()?.Url ?? item.ImageUrl;
+                var inWish    = wishlistIds.Contains(item.Id);
+                <div class="col">
+                    <div class="product-card">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="product-img-link">
+                            <div class="product-img-wrap">
+                                <img class="img-primary" src="@item.ImageUrl" alt="@item.Name">
+                                <img class="img-hover"   src="@hoverImg"      alt="@item.Name">
+                                <button type="button"
+                                        class="wish-btn @(inWish ? "wish-btn--active" : "")"
+                                        data-id="@item.Id"
+                                        data-name="@item.Name"
+                                        onclick="toggleWishlist(event,this)">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" stroke-width="1.8"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </a>
+                        <div class="product-info">
+                            <p class="product-name">@item.Name</p>
+                            <p class="product-category">@item.Category</p>
+                            <p class="product-price">@item.Price грн</p>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="product-btn">Детальніше</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div id="filter-overlay" class="filter-overlay"></div>
+
+<aside id="filter-panel" class="filter-panel">
+    <div class="filter-header">
+        <span class="filter-title">Фільтри</span>
+        <button id="filter-close" class="filter-close" aria-label="Закрити">&times;</button>
+    </div>
+
+    <form class="filter-body" method="get" asp-controller="Home" asp-action="Index">
+        <input type="hidden" name="searchString" value="@cSearch">
+
+        <div class="filter-group">
+            <span class="filter-group-title">Сортування</span>
+            <div class="filter-radio-list">
+                <label class="filter-radio-label">
+                    <input type="radio" name="sort" value="date_desc" @(string.IsNullOrEmpty(cSort) || cSort == "date_desc" ? "checked" : "")>
+                    Спочатку нові
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="sort" value="date_asc" @(cSort == "date_asc" ? "checked" : "")>
+                    Спочатку старі
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="sort" value="price_asc" @(cSort == "price_asc" ? "checked" : "")>
+                    Від дешевших
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="sort" value="price_desc" @(cSort == "price_desc" ? "checked" : "")>
+                    Від дорожчих
+                </label>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-group-title">Ціна (грн)</span>
+            <div class="price-range-inputs">
+                <input type="number" name="priceMin" class="price-input"
+                       placeholder="Від" min="0" value="@cMin">
+                <span class="price-sep">—</span>
+                <input type="number" name="priceMax" class="price-input"
+                       placeholder="До" min="0" value="@cMax">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-group-title">Наявність</span>
+            <div class="filter-radio-list">
+                <label class="filter-radio-label">
+                    <input type="radio" name="stockFilter" value="" @(string.IsNullOrEmpty(cStock) ? "checked" : "")>
+                    В наявності
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="stockFilter" value="unavailable" @(cStock == "unavailable" ? "checked" : "")>
+                    Немає в наявності
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="stockFilter" value="all" @(cStock == "all" ? "checked" : "")>
+                    Показати всі
+                </label>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-group-title">Категорія</span>
+            <div class="filter-radio-list">
+                <label class="filter-radio-label">
+                    <input type="radio" name="category" value="" @(string.IsNullOrEmpty(cCategory) ? "checked" : "")>
+                    Всі
+                </label>
+                @foreach (var cat in new[] { "Джинси","Штани","Худі","Футболки","Лонгсліви","Куртки","Трикотаж","Аксесуари","Взуття","Верхній одяг","Денім" })
+                {
+                    <label class="filter-radio-label">
+                        <input type="radio" name="category" value="@cat" @(cCategory == cat ? "checked" : "")>
+                        @cat
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-group-title">Стать</span>
+            <div class="filter-radio-list">
+                <label class="filter-radio-label">
+                    <input type="radio" name="gender" value="" @(string.IsNullOrEmpty(cGender) ? "checked" : "")> Всі
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="gender" value="Жіночий" @(cGender == "Жіночий" ? "checked" : "")> Жіночий
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="gender" value="Чоловічий" @(cGender == "Чоловічий" ? "checked" : "")> Чоловічий
+                </label>
+                <label class="filter-radio-label">
+                    <input type="radio" name="gender" value="Унісекс" @(cGender == "Унісекс" ? "checked" : "")> Унісекс
+                </label>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-group-title">Розмір</span>
+            <div class="size-btn-group">
+                @foreach (var s in new[] { "","S","M","L","XL","XXL" })
+                {
+                    var lbl = s == "" ? "Всі" : s;
+                    bool isChecked = (s == "" && string.IsNullOrEmpty(cSize)) || cSize == s;
+                    <label class="size-btn-label">
+                        <input type="radio" name="size" value="@s" @(isChecked ? "checked" : "")>
+                        <span>@lbl</span>
+                    </label>
+                }
+            </div>
+        </div>
+
+        <div class="filter-footer">
+            <button type="submit" class="filter-apply">Застосувати</button>
+            <a asp-controller="Home" asp-action="Index" class="filter-reset">Скинути</a>
+        </div>
+    </form>
+</aside>

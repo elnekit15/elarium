@@ -1,0 +1,476 @@
+@model DesignerStore.Models.DashboardViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Дашборд";
+
+    string StatusLabel(DesignerStore.Models.OrderStatus s) => s switch
+    {
+        DesignerStore.Models.OrderStatus.Pending    => "Очікує",
+        DesignerStore.Models.OrderStatus.Paid       => "Оплачено",
+        DesignerStore.Models.OrderStatus.Processing => "Обробляється",
+        DesignerStore.Models.OrderStatus.Shipped    => "Відправлено",
+        DesignerStore.Models.OrderStatus.Delivered  => "Доставлено",
+        DesignerStore.Models.OrderStatus.Cancelled  => "Скасовано",
+        _                                           => s.ToString()
+    };
+
+    string StatusCss(DesignerStore.Models.OrderStatus s) => s switch
+    {
+        DesignerStore.Models.OrderStatus.Paid       => "ds-paid",
+        DesignerStore.Models.OrderStatus.Processing => "ds-processing",
+        DesignerStore.Models.OrderStatus.Shipped    => "ds-shipped",
+        DesignerStore.Models.OrderStatus.Delivered  => "ds-delivered",
+        DesignerStore.Models.OrderStatus.Cancelled  => "ds-cancelled",
+        _                                           => "ds-pending"
+    };
+
+    // Serialise chart data — поточний рік
+    var monthLabels  = JsonSerializer.Serialize(Model.RevenueByMonth.Select(m => m.Label));
+    var monthAmounts = JsonSerializer.Serialize(Model.RevenueByMonth.Select(m => m.Amount));
+    var monthCounts  = JsonSerializer.Serialize(Model.RevenueByMonth.Select(m => m.Count));
+
+    // Serialise chart data — ковзні 12 місяців
+    var rollingLabels  = JsonSerializer.Serialize(Model.RevenueByMonthRolling.Select(m => m.Label));
+    var rollingAmounts = JsonSerializer.Serialize(Model.RevenueByMonthRolling.Select(m => m.Amount));
+    var rollingCounts  = JsonSerializer.Serialize(Model.RevenueByMonthRolling.Select(m => m.Count));
+
+    var currentYear = DateTime.UtcNow.Year;
+
+    // Status doughnut — same order every time
+    var statusOrder = new[]
+    {
+        DesignerStore.Models.OrderStatus.Paid,
+        DesignerStore.Models.OrderStatus.Processing,
+        DesignerStore.Models.OrderStatus.Shipped,
+        DesignerStore.Models.OrderStatus.Delivered,
+        DesignerStore.Models.OrderStatus.Pending,
+        DesignerStore.Models.OrderStatus.Cancelled
+    };
+    var statusLabels = JsonSerializer.Serialize(statusOrder.Select(StatusLabel));
+    var statusData   = JsonSerializer.Serialize(statusOrder.Select(s =>
+        Model.StatusBreakdown.TryGetValue(s, out var c) ? c : 0));
+    var statusColors = JsonSerializer.Serialize(new[]
+        { "#111111", "#444444", "#777777", "#aaaaaa", "#d4d4d4", "#f0f0f0" });
+}
+
+<style>
+/* Layout */
+.dash-wrap   { padding: 2rem 2rem 3rem; }
+.dash-head   { display:flex; align-items:baseline; gap:.75rem; margin-bottom:2rem; }
+.dash-title  { font-size:.9rem; font-weight:400; letter-spacing:4px; text-transform:uppercase; margin:0; }
+.dash-sub    { font-size:.65rem; color:#aaa; letter-spacing:2px; text-transform:uppercase; }
+
+/* KPI cards  */
+.kpi-card        { border:1px solid #e8e8e8; padding:1.4rem 1.6rem 1.2rem; height:100%; }
+.kpi-label       { font-size:.6rem; letter-spacing:2.5px; text-transform:uppercase; color:#aaa; margin-bottom:.5rem; }
+.kpi-value       { font-size:1.9rem; font-weight:300; line-height:1; letter-spacing:-.01em; color:#111; }
+.kpi-sub         { font-size:.65rem; color:#bbb; margin-top:.35rem; }
+
+/* Panels */
+.dash-panel       { border:1px solid #e8e8e8; padding:1.5rem 1.6rem; height:100%; }
+.dash-panel-title { font-size:.65rem; letter-spacing:2.5px; text-transform:uppercase; color:#888; margin-bottom:1.2rem; }
+
+/* Top products */
+.top-item        { display:flex; align-items:center; gap:.9rem; padding:.6rem 0;
+                   border-bottom:1px solid #f4f4f4; }
+.top-item:last-child { border-bottom:none; }
+.top-rank        { font-size:.7rem; color:#ccc; width:1rem; flex-shrink:0; text-align:right; }
+.top-img         { width:38px; height:38px; object-fit:cover; flex-shrink:0; background:#f8f8f8; }
+.top-name        { font-size:.75rem; font-weight:400; color:#111; white-space:nowrap;
+                   overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.top-meta        { font-size:.65rem; color:#aaa; margin-top:.15rem; }
+
+/* Recent orders table */
+.dash-table      { width:100%; font-size:.72rem; border-collapse:collapse; }
+.dash-table th   { font-size:.58rem; letter-spacing:2px; text-transform:uppercase;
+                   color:#aaa; font-weight:400; padding:.4rem .7rem .8rem;
+                   border-bottom:1px solid #e8e8e8; text-align:left; white-space:nowrap; }
+.dash-table td   { padding:.55rem .7rem; border-bottom:1px solid #f6f6f6;
+                   color:#333; vertical-align:middle; }
+.dash-table tr:last-child td { border-bottom:none; }
+.dash-table tr:hover td { background:#fafafa; }
+
+/* Status pills */
+.ds-pill         { font-size:.58rem; letter-spacing:1.5px; text-transform:uppercase;
+                   padding:.25rem .55rem; display:inline-block; }
+.ds-pending      { background:#f5f5f5; color:#888; }
+.ds-paid         { background:#111; color:#fff; }
+.ds-processing   { background:#444; color:#fff; }
+.ds-shipped      { background:#777; color:#fff; }
+.ds-delivered    { background:#e8f5e9; color:#2e7d32; }
+.ds-cancelled    { background:#fce4ec; color:#c62828; }
+
+/* Misc */
+.dash-link  { font-size:.65rem; letter-spacing:1.5px; text-transform:uppercase;
+              color:#111; text-decoration:none; border-bottom:1px solid #ddd; }
+.dash-link:hover { border-color:#111; }
+.dash-empty { font-size:.72rem; color:#bbb; letter-spacing:1.5px; text-align:center;
+              padding:2rem 0; margin:0; }
+.order-id-link { color:#111; text-decoration:none; border-bottom:1px solid #ddd; }
+.order-id-link:hover { border-color:#111; }
+
+/* Chart canvas height fix */
+#revenueChart { max-height:240px; }
+#statusChart  { max-height:200px; }
+</style>
+
+<div class="dash-wrap">
+
+    <!-- Header -->
+    <div class="dash-head">
+        <h1 class="dash-title">Аналітика</h1>
+        <span class="dash-sub">—    дані продажів</span>
+    </div>
+
+    <!-- KPI row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Виручка</div>
+                <div class="kpi-value">@Model.TotalRevenue.ToString("N0")<span style="font-size:1rem;color:#aaa;"> ₴</span></div>
+                <div class="kpi-sub">оплачені замовлення</div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Замовлення</div>
+                <div class="kpi-value">@Model.TotalOrders</div>
+                <div class="kpi-sub">@Model.PaidOrders оплачено</div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Середній чек</div>
+                <div class="kpi-value">@Model.AvgOrderValue.ToString("N0")<span style="font-size:1rem;color:#aaa;"> ₴</span></div>
+                <div class="kpi-sub">серед оплачених</div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Клієнти</div>
+                <div class="kpi-value">@Model.UniqueCustomers</div>
+                <div class="kpi-sub">унікальних email</div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Товарів</div>
+                <div class="kpi-value">@Model.TotalProducts</div>
+                <div class="kpi-sub">в каталозі</div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-2">
+            <div class="kpi-card">
+                <div class="kpi-label">Продано</div>
+                <div class="kpi-value">@Model.TopProducts.Sum(p => p.QuantitySold)</div>
+                <div class="kpi-sub">одиниць товару</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="row g-3 mb-4">
+
+        <!-- Revenue bar chart -->
+        <div class="col-12 col-lg-8">
+            <div class="dash-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="dash-panel-title mb-0">Виручка по місяцях (оплачені замовлення, ₴)</div>
+                    <div class="d-flex gap-1" id="revenue-toggle">
+                        <button onclick="setRevenueMode('year')"
+                                id="btn-year"
+                                class="revenue-mode-btn revenue-mode-btn--active"
+                                style="font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;
+                                       padding:.25rem .7rem;border:1px solid #111;background:#111;
+                                       color:#fff;cursor:pointer;">
+                            @currentYear
+                        </button>
+                        <button onclick="setRevenueMode('rolling')"
+                                id="btn-rolling"
+                                style="font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;
+                                       padding:.25rem .7rem;border:1px solid #ddd;background:#fff;
+                                       color:#999;cursor:pointer;">
+                            12 міс.
+                        </button>
+                    </div>
+                </div>
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Status doughnut -->
+        <div class="col-12 col-lg-4">
+            <div class="dash-panel">
+                <div class="dash-panel-title">Статуси замовлень</div>
+                <div class="d-flex justify-content-center">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div id="status-legend" class="mt-3 d-flex flex-column gap-1"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom row -->
+    <div class="row g-3">
+
+        <!-- Top products -->
+        <div class="col-12 col-lg-5">
+            <div class="dash-panel">
+                <div class="dash-panel-title">Топ-товари за кількістю продажів</div>
+                @if (!Model.TopProducts.Any())
+                {
+                    <p class="dash-empty">Немає даних про продажі</p>
+                }
+                else
+                {
+                    @foreach (var (p, idx) in Model.TopProducts.Select((x, i) => (x, i + 1)))
+                    {
+                        <div class="top-item">
+                            <span class="top-rank">@idx</span>
+                            @if (!string.IsNullOrEmpty(p.ImageUrl))
+                            {
+                                <img src="@p.ImageUrl" class="top-img" alt="@p.Name">
+                            }
+                            else
+                            {
+                                <div class="top-img" style="background:#f0f0f0;"></div>
+                            }
+                            <div style="overflow:hidden;">
+                                <div class="top-name" title="@p.Name">@p.Name</div>
+                                <div class="top-meta">@p.QuantitySold шт · @p.Revenue.ToString("N0") ₴</div>
+                            </div>
+                            @if (idx == 1)
+                            {
+                                <span style="margin-left:auto;font-size:.7rem;">#1</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Recent orders -->
+        <div class="col-12 col-lg-7">
+            <div class="dash-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="dash-panel-title mb-0">Останні замовлення</div>
+                    <a asp-controller="Orders" asp-action="Index" class="dash-link">Всі →</a>
+                </div>
+                @if (!Model.RecentOrders.Any())
+                {
+                    <p class="dash-empty">Замовлень поки немає</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Клієнт</th>
+                                    <th>Місто</th>
+                                    <th>Сума</th>
+                                    <th>Дата</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var o in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Orders" asp-action="Details"
+                                               asp-route-id="@o.Id" class="order-id-link">
+                                                @o.Id
+                                            </a>
+                                        </td>
+                                        <td title="@o.CustomerEmail">
+                                            @(o.CustomerName.Length > 16
+                                                ? o.CustomerName[..16] + "…"
+                                                : o.CustomerName)
+                                        </td>
+                                        <td style="color:#aaa;">@(string.IsNullOrEmpty(o.City) ? "—" : o.City)</td>
+                                        <td style="font-variant-numeric:tabular-nums;white-space:nowrap;">
+                                            @o.TotalAmount.ToString("N0") ₴
+                                        </td>
+                                        <td style="color:#aaa;white-space:nowrap;">
+                                            @o.CreatedAt.ToString("dd.MM.yy")
+                                        </td>
+                                        <td>
+                                            <span class="ds-pill @StatusCss(o.Status)">
+                                                @StatusLabel(o.Status)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    // shared font defaults 
+    Chart.defaults.font.family = "'Montserrat', 'Space Grotesk', sans-serif";
+    Chart.defaults.font.size   = 10;
+    Chart.defaults.color       = '#888';
+
+    // Дані для графіку 
+    const monthLabels  = @Html.Raw(monthLabels);
+    const monthAmounts = @Html.Raw(monthAmounts);
+    const monthCounts  = @Html.Raw(monthCounts);
+
+    const rollingLabels  = @Html.Raw(rollingLabels);
+    const rollingAmounts = @Html.Raw(rollingAmounts);
+    const rollingCounts  = @Html.Raw(rollingCounts);
+
+    // Revenue bar chart 
+    const revenueChart = new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Виручка',
+                data: monthAmounts,
+                backgroundColor: function (ctx) {
+                    var max = Math.max(...monthAmounts);
+                    var v   = monthAmounts[ctx.dataIndex] || 0;
+                    var alpha = max > 0 ? 0.25 + 0.75 * (v / max) : 0.25;
+                    return 'rgba(17,17,17,' + alpha.toFixed(2) + ')';
+                },
+                borderRadius: 2,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index' },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            return ' ' + ctx.parsed.y.toLocaleString('uk-UA') + ' ₴';
+                        },
+                        afterLabel: function (ctx) {
+                            var n = (revenueChart._counts || [])[ctx.dataIndex];
+                            return n > 0 ? ' ' + n + ' замовл.' : '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { maxRotation: 45, font: { size: 9 } }
+                },
+                y: {
+                    grid: { color: '#f4f4f4' },
+                    ticks: {
+                        callback: function (v) {
+                            return v >= 1000
+                                ? (v / 1000).toFixed(v % 1000 === 0 ? 0 : 1) + 'k ₴'
+                                : v + ' ₴';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // зберігаємо counts для tooltip
+    revenueChart._counts = monthCounts;
+
+    // Перемикач режимів графіку - виставляємо глобально для onclick 
+    function updateBarColors(amounts) {
+        var max = Math.max(...amounts);
+        return amounts.map(function (v) {
+            var alpha = max > 0 ? 0.25 + 0.75 * (v / max) : 0.25;
+            return 'rgba(17,17,17,' + alpha.toFixed(2) + ')';
+        });
+    }
+
+    window.setRevenueMode = function (mode) {
+        var labels  = mode === 'rolling' ? rollingLabels  : monthLabels;
+        var amounts = mode === 'rolling' ? rollingAmounts : monthAmounts;
+        var counts  = mode === 'rolling' ? rollingCounts  : monthCounts;
+
+        revenueChart.data.labels                      = labels;
+        revenueChart.data.datasets[0].data            = amounts;
+        revenueChart.data.datasets[0].backgroundColor = updateBarColors(amounts);
+        revenueChart._counts = counts;
+        revenueChart.update();
+
+        var btnYear    = document.getElementById('btn-year');
+        var btnRolling = document.getElementById('btn-rolling');
+        if (mode === 'rolling') {
+            btnRolling.style.cssText = 'font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;padding:.25rem .7rem;border:1px solid #111;background:#111;color:#fff;cursor:pointer;';
+            btnYear.style.cssText    = 'font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;padding:.25rem .7rem;border:1px solid #ddd;background:#fff;color:#999;cursor:pointer;';
+        } else {
+            btnYear.style.cssText    = 'font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;padding:.25rem .7rem;border:1px solid #111;background:#111;color:#fff;cursor:pointer;';
+            btnRolling.style.cssText = 'font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;padding:.25rem .7rem;border:1px solid #ddd;background:#fff;color:#999;cursor:pointer;';
+        }
+    };
+
+    // Status doughnut
+    const statusLabels = @Html.Raw(statusLabels);
+    const statusData   = @Html.Raw(statusData);
+    const statusColors = @Html.Raw(statusColors);
+
+    var totalOrders = statusData.reduce(function (a, b) { return a + b; }, 0);
+
+    // Build legend HTML before chart renders
+    var legendHtml = '';
+    statusLabels.forEach(function (lbl, i) {
+        if (statusData[i] === 0) return;
+        var pct = totalOrders > 0 ? Math.round(statusData[i] / totalOrders * 100) : 0;
+        legendHtml +=
+            '<div style="display:flex;align-items:center;gap:.5rem;">' +
+            '<span style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:' + statusColors[i] + ';"></span>' +
+            '<span style="font-size:.65rem;color:#555;">' + lbl + '</span>' +
+            '<span style="font-size:.65rem;color:#aaa;margin-left:auto;">' + statusData[i] + ' (' + pct + '%)</span>' +
+            '</div>';
+    });
+    document.getElementById('status-legend').innerHTML = legendHtml ||
+        '<p style="font-size:.65rem;color:#ccc;text-align:center;margin:0;">Немає даних</p>';
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusData,
+                backgroundColor: statusColors,
+                borderWidth: 2,
+                borderColor: '#fff',
+                hoverBorderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            var pct = totalOrders > 0
+                                ? Math.round(ctx.parsed / totalOrders * 100) : 0;
+                            return ' ' + ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+}

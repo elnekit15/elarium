@@ -1,0 +1,204 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@using Microsoft.AspNetCore.Http
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - E L A R I U M</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DesignerStore.styles.css" asp-append-version="true" />
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <header class="site-header">
+        <div class="header-inner">
+
+            <a class="site-logo" asp-area="" asp-controller="Home" asp-action="Landing">E L A R I U M</a>
+
+            <nav class="header-nav">
+                @{ var currentCat = ViewData["CurrentCategory"] as string; }
+
+                <div class="nav-cat-wrap">
+                    <span class="nav-txt-link">Інформація</span>
+                    <div class="nav-dropdown">
+                        <a asp-controller="Info" asp-action="About">Про нас</a>
+                        <a asp-controller="Info" asp-action="Contacts">Контакти</a>
+                        <a asp-controller="Info" asp-action="FAQ">Поширені питання</a>
+                        <a asp-controller="Info" asp-action="Delivery">Доставка та повернення</a>
+                    </div>
+                </div>
+
+                <a class="nav-txt-link" asp-controller="Defile" asp-action="Index">Дефіле</a>
+
+                <a class="nav-txt-link" asp-controller="Order" asp-action="Track">Відстежити</a>
+
+                <div class="nav-cat-wrap">
+                    <a class="nav-txt-link" asp-area="" asp-controller="Home" asp-action="Index">Колекція</a>
+                    <div class="nav-dropdown">
+                        <a asp-controller="Home" asp-action="Index" asp-route-category=""
+                           class="@(string.IsNullOrEmpty(currentCat) ? "nav-active" : "")">Всі товари</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Джинси"
+                           class="@(currentCat == "Джинси" ? "nav-active" : "")">Джинси</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Штани"
+                           class="@(currentCat == "Штани" ? "nav-active" : "")">Штани</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Худі"
+                           class="@(currentCat == "Худі" ? "nav-active" : "")">Худі</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Футболки"
+                           class="@(currentCat == "Футболки" ? "nav-active" : "")">Футболки</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Лонгсліви"
+                           class="@(currentCat == "Лонгсліви" ? "nav-active" : "")">Лонгсліви</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Куртки"
+                           class="@(currentCat == "Куртки" ? "nav-active" : "")">Куртки</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Трикотаж"
+                           class="@(currentCat == "Трикотаж" ? "nav-active" : "")">Трикотаж</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Аксесуари"
+                           class="@(currentCat == "Аксесуари" ? "nav-active" : "")">Аксесуари</a>
+                        <a asp-controller="Home" asp-action="Index" asp-route-category="Взуття"
+                           class="@(currentCat == "Взуття" ? "nav-active" : "")">Взуття</a>
+                    </div>
+                </div>
+
+                @if (SignInManager.IsSignedIn(User) && User.IsInRole("Admin"))
+                {
+                    <div class="nav-cat-wrap">
+                        <span class="nav-txt-link nav-txt-link--danger">Адмін</span>
+                        <div class="nav-dropdown">
+                            <a asp-controller="Admin" asp-action="Dashboard">Дашборд</a>
+                            <a asp-area="" asp-controller="Products" asp-action="Index">Товари</a>
+                            <a asp-controller="Defile" asp-action="Manage">Дефіле</a>
+                            <a asp-controller="Orders" asp-action="Index">Замовлення</a>
+                        </div>
+                    </div>
+                }
+            </nav>
+
+            <div class="header-right">
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <a asp-controller="Order" asp-action="MyOrders" class="btn-hdr">Мої замовлення</a>
+                }
+
+                @{
+                    int wishCount = 0;
+                    var wishJson  = Context.Session.GetString("Wishlist");
+                    if (!string.IsNullOrEmpty(wishJson))
+                    {
+                        var wishIds = System.Text.Json.JsonSerializer.Deserialize<List<int>>(wishJson);
+                        wishCount = wishIds?.Count ?? 0;
+                    }
+                }
+                <a asp-controller="Wishlist" asp-action="Index" class="cart-link" title="Обране">
+                    <span class="cart-icon-wrap">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        @if (wishCount > 0)
+                        {
+                            <span class="cart-badge" id="wish-count-badge">@wishCount</span>
+                        }
+                        else
+                        {
+                            <span class="cart-badge" id="wish-count-badge" style="display:none;">0</span>
+                        }
+                    </span>
+                </a>
+
+                <form asp-controller="Home" asp-action="Index" method="get" class="search-form">
+                    <input type="text" name="searchString" placeholder="Пошук..." class="search-input">
+                    <button type="submit" class="search-btn">&#9906;</button>
+                </form>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <form class="m-0 d-flex align-items-center" asp-area="Identity" asp-page="/Account/Logout"
+                          asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" method="post">
+                        <button type="submit" class="btn-hdr btn-hdr--danger">Вийти</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/Identity/Account/Login" class="btn-hdr">Вхід</a>
+                }
+
+                @{
+                    int cartCount = 0;
+                    var cartJson = Context.Session.GetString("Cart");
+                    if (!string.IsNullOrEmpty(cartJson))
+                    {
+                        var cart = System.Text.Json.JsonSerializer.Deserialize<List<DesignerStore.Models.CartItem>>(cartJson);
+                        cartCount = cart?.Sum(c => c.Quantity) ?? 0;
+                    }
+                }
+                <a asp-controller="Cart" asp-action="Index" class="cart-link">
+                    <span class="cart-icon-wrap">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <path d="M16 10a4 4 0 01-8 0"/>
+                        </svg>
+                        @if (cartCount > 0)
+                        {
+                            <span class="cart-badge" id="cart-count-badge">@cartCount</span>
+                        }
+                        else
+                        {
+                            <span class="cart-badge" id="cart-count-badge" style="display:none;">0</span>
+                        }
+                    </span>
+                    <span class="cart-text">кошик</span>
+                </a>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="site-main-wrap flex-grow-1">
+        <main role="main" class="flex-grow-1">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="site-footer">
+        &copy; 2026 &mdash; E L A R I U M &mdash; DESIGNER STORE &mdash; MYKYTA PLATONOV &mdash;
+        <a asp-area="" asp-controller="Home" asp-action="Privacy">Конфіденційність</a>
+    </footer>
+
+    @* Wishlist toast notification *@
+    <div id="wish-toast" class="wish-toast" role="status" aria-live="polite">
+        <svg class="wish-toast-heart" width="16" height="16" viewBox="0 0 24 24"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <span id="wish-toast-text" class="wish-toast-text">Додано до обраного</span>
+        <a asp-controller="Wishlist" asp-action="Index" id="wish-toast-link" class="wish-toast-link">Переглянути</a>
+        <button class="wish-toast-close" onclick="document.getElementById('wish-toast').classList.remove('show')">&times;</button>
+    </div>
+
+    @* Cart toast notification *@
+    <div id="cart-toast" class="cart-toast" role="status" aria-live="polite">
+        <svg class="cart-toast-icon" width="17" height="17" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <div class="cart-toast-body">
+            <div class="cart-toast-title">Додано в кошик</div>
+            <div class="cart-toast-name" id="cart-toast-name"></div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet ef *)",
+      "Bash(del \"D:\\\\study\\\\diploma\\\\DesignerStore\\\\Migrations\\\\20260522221202_AddGenderToProduct.cs\" \"D:\\\\study\\\\diploma\\\\DesignerStore\\\\Migrations\\\\20260522221202_AddGenderToProduct.Designer.cs\")",
+      "PowerShell($paths = @\\(\"C:\\\\Program Files\\\\PostgreSQL\", \"C:\\\\PostgreSQL\", \"D:\\\\PostgreSQL\", \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\", \"C:\\\\Program Files\\\\PostgreSQL\\\\15\\\\bin\\\\psql.exe\", \"C:\\\\Program Files\\\\PostgreSQL\\\\14\\\\bin\\\\psql.exe\", \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\\\\psql.exe\"\\); foreach \\($p in $paths\\) { if \\(Test-Path $p\\) { Write-Output \"FOUND: $p\" } })",
+      "PowerShell([System.IO.Directory]::GetDirectories\\(\"C:\\\\Program Files\\\\PostgreSQL\"\\))",
+      "PowerShell($psql = \"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\bin\\\\psql.exe\"; if \\(Test-Path $psql\\) { Write-Output \"Found psql at $psql\" } else { Write-Output \"Not found\" })"
+    ]
+  }
+}

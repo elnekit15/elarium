@@ -1,0 +1,92 @@
+@model List<DesignerStore.Models.Order>
+@using DesignerStore.Models
+@{
+    ViewData["Title"] = "Мої замовлення";
+
+    string StatusLabel(OrderStatus s) => s switch
+    {
+        OrderStatus.Pending    => "Очікує оплати",
+        OrderStatus.Paid       => "Оплачено",
+        OrderStatus.Processing => "В обробці",
+        OrderStatus.Shipped    => "Відправлено",
+        OrderStatus.Delivered  => "Доставлено",
+        OrderStatus.Cancelled  => "Скасовано",
+        _                      => s.ToString()
+    };
+    string StatusColor(OrderStatus s) => s switch
+    {
+        OrderStatus.Pending    => "#888",
+        OrderStatus.Paid       => "#28a745",
+        OrderStatus.Processing => "#007bff",
+        OrderStatus.Shipped    => "#6f42c1",
+        OrderStatus.Delivered  => "#111",
+        OrderStatus.Cancelled  => "#dc3545",
+        _                      => "#888"
+    };
+}
+
+<div class="container mt-5 mb-5" style="max-width:800px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="font-weight:300;letter-spacing:2px;">МОЇ ЗАМОВЛЕННЯ</h2>
+        <span class="text-muted small">Всього: @Model.Count</span>
+    </div>
+    <hr />
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <p class="text-muted mb-4" style="font-size:0.85rem;letter-spacing:1px;">У вас ще немає замовлень</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-dark rounded-0 px-5" style="letter-spacing:2px;font-size:0.72rem;">
+                ПЕРЕЙТИ ДО КОЛЕКЦІЇ
+            </a>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in Model)
+        {
+            <div class="border mb-3 p-4" style="font-size:0.83rem;">
+                <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                    <div>
+                        <span class="text-muted small">Замовлення</span>
+                        <span style="font-weight:600;margin-left:4px;">#@order.Id</span>
+                        <span class="text-muted small ms-3">@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <span style="font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;
+                                 color:@StatusColor(order.Status);font-weight:600;">
+                        @StatusLabel(order.Status)
+                    </span>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    @foreach (var item in order.Items)
+                    {
+                        <div class="d-flex align-items-center gap-2 border p-2" style="min-width:200px;">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" style="width:40px;height:52px;object-fit:cover;flex-shrink:0;" />
+                            }
+                            <div style="font-size:0.78rem;">
+                                <div style="font-weight:600;">@item.ProductName</div>
+                                <div class="text-muted">@item.Size · @item.Quantity шт.</div>
+                                <div>@(item.Price * item.Quantity) грн</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <span class="text-muted small">@order.City, @order.Address</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <strong>@order.TotalAmount грн</strong>
+                        <a asp-controller="Order" asp-action="Track" class="text-muted small text-decoration-none"
+                           style="font-size:0.7rem;letter-spacing:1px;">
+                            Відстежити →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

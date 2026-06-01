@@ -1,0 +1,60 @@
+@model List<DesignerStore.Models.CartItem>
+
+<div class="container mt-5">
+    <h2 class="mb-4" style="font-weight:300;letter-spacing:2px;">ВАШ КОШИК</h2>
+    <hr />
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <h4 class="text-muted" style="font-weight:300;">Кошик порожній</h4>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-dark mt-3 rounded-0">ПЕРЕЙТИ ДО ПОКУПОК</a>
+        </div>
+    }
+    else
+    {
+        <table class="table align-middle">
+            <thead>
+                <tr class="text-uppercase small text-muted">
+                    <th></th>
+                    <th>Товар</th>
+                    <th>Розмір</th>
+                    <th>Ціна</th>
+                    <th>Кількість</th>
+                    <th>Сума</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td style="width:70px;">
+                            <img src="@item.ImageUrl" style="width:60px;height:80px;object-fit:cover;" />
+                        </td>
+                        <td style="font-weight:600;">@item.Name</td>
+                        <td>@item.Size</td>
+                        <td>@item.Price грн</td>
+                        <td>@item.Quantity шт.</td>
+                        <td style="font-weight:600;">@(item.Price * item.Quantity) грн</td>
+                        <td>
+                            <form asp-action="RemoveItem" method="post" class="m-0">
+                                <input type="hidden" name="productId" value="@item.ProductId">
+                                <input type="hidden" name="size" value="@item.Size">
+                                <button type="submit" class="cart-remove-btn" title="Видалити">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between align-items-center mt-5 p-4 bg-light">
+            <h4 style="font-weight:300;">Загальна сума: <strong>@Model.Sum(i => i.Price * i.Quantity) грн</strong></h4>
+            <div>
+                <a asp-action="ClearCart" class="btn btn-outline-danger rounded-0 me-2">Очистити кошик</a>
+                <a asp-controller="Order" asp-action="Checkout" class="btn btn-dark rounded-0 px-4">ОФОРМИТИ ЗАМОВЛЕННЯ</a>
+            </div>
+        </div>
+    }
+</div>

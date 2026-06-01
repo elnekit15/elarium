@@ -1,0 +1,42 @@
+@page
+@model ExternalLoginModel
+@{
+    ViewData["Title"] = "Вхід через " + @Model.ProviderDisplayName;
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5 col-lg-4 border p-4">
+
+            <h2 class="text-center mb-1" style="font-weight:300;letter-spacing:2px;">ВХІД</h2>
+            <p class="text-center text-muted small mb-4" style="letter-spacing:1px;">
+                через @Model.ProviderDisplayName
+            </p>
+
+            <div class="alert rounded-0 py-2 mb-4" style="background:#f0f7f0;border-color:#28a745;font-size:0.8rem;">
+                Автентифікацію через <strong>@Model.ProviderDisplayName</strong> підтверджено.<br />
+                Введіть email для прив'язки акаунту.
+            </div>
+
+            <form asp-page-handler="Confirmation" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
+
+                <div class="mb-4">
+                    <label asp-for="Input.Email" class="form-label small text-uppercase" style="letter-spacing:1px;">Email</label>
+                    <input asp-for="Input.Email" class="form-control rounded-0" autocomplete="email" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="w-100 btn btn-dark rounded-0 py-3" style="letter-spacing:2px;font-size:0.75rem;">
+                    ЗАРЕЄСТРУВАТИСЬ
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

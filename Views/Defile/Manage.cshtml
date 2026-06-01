@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Керування Дефіле";
+    string desc = ViewBag.Description ?? "";
+}
+
+<div class="container mt-5" style="max-width: 740px;">
+    <h2 style="font-weight: 300; letter-spacing: 2px; text-transform: uppercase;">Керування дефіле</h2>
+    <hr class="mb-4">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success rounded-0 small">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-0 small">@TempData["Error"]</div>
+    }
+
+    @if (ViewBag.HasVideo)
+    {
+        <div class="mb-5">
+            <p class="text-muted small text-uppercase mb-2" style="letter-spacing: 1px;">Поточне відео</p>
+            <video width="100%" style="border: 1px solid #eaeaea; max-height: 320px;" controls>
+                <source src="/images/defile_main.mp4?v=@DateTime.Now.Ticks" type="video/mp4">
+            </video>
+        </div>
+    }
+    else
+    {
+        <div class="mb-4 p-4 bg-light text-center small text-muted" style="letter-spacing: 1px;">
+            Відео ще не завантажено
+        </div>
+    }
+
+    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+
+        <div class="mb-4">
+            <label class="form-label small text-uppercase" style="letter-spacing: 1px;">
+                Опис колекції
+            </label>
+            <textarea name="description" rows="3" class="form-control rounded-0"
+                      placeholder="Напишіть про колекцію, сезон, матеріали...">@desc</textarea>
+            <div class="form-text text-muted" style="font-size: 0.72rem;">
+                Відображається під відео на сторінці дефіле. Залиште порожнім, щоб не показувати.
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label small text-uppercase" style="letter-spacing: 1px;">
+                @(ViewBag.HasVideo ? "Замінити відео" : "Завантажити відео")
+                <span class="text-muted">(лише .mp4 — необов&rsquo;язково)</span>
+            </label>
+            <input type="file" name="video" accept="video/mp4" class="form-control rounded-0">
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-dark rounded-0 px-5 py-2 text-uppercase"
+                    style="font-size: 0.78rem; letter-spacing: 2px;">
+                Зберегти
+            </button>
+            <a asp-controller="Defile" asp-action="Index"
+               class="btn btn-outline-secondary rounded-0 px-4 py-2"
+               style="font-size: 0.78rem; letter-spacing: 1px;">
+                Переглянути сторінку
+            </a>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,71 @@
+@model List<DesignerStore.Models.Product>
+@{
+    ViewData["Title"] = "Обране";
+    var wishlistIds = ViewBag.WishlistIds as HashSet<int> ?? new HashSet<int>();
+}
+
+<div class="products-section" style="min-height:calc(100vh - var(--header-h));">
+
+    <div class="products-header">
+        <span class="products-label">Обране — @Model.Count @(Model.Count == 1 ? "товар" : (Model.Count < 5 ? "товари" : "товарів"))</span>
+        @if (Model.Any())
+        {
+            <a asp-controller="Home" asp-action="Index" class="btn-hdr" style="font-size:0.65rem;letter-spacing:1.5px;">
+                ← До колекції
+            </a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.2"
+                 stroke-linecap="round" stroke-linejoin="round" class="mb-4">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <p style="font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;color:#aaa;">Обране порожнє</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-dark rounded-0 mt-4 px-5"
+               style="font-size:0.72rem;letter-spacing:2px;">
+                Переглянути колекцію
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+            @foreach (var item in Model)
+            {
+                var hoverImg = item.Images.FirstOrDefault()?.Url ?? item.ImageUrl;
+                <div class="col" id="wish-card-@item.Id">
+                    <div class="product-card">
+                        <a asp-controller="Home" asp-action="Details" asp-route-id="@item.Id" class="product-img-link">
+                            <div class="product-img-wrap">
+                                <img class="img-primary" src="@item.ImageUrl" alt="@item.Name">
+                                <img class="img-hover"   src="@hoverImg"      alt="@item.Name">
+                                <button type="button"
+                                        class="wish-btn wish-btn--active"
+                                        data-id="@item.Id"
+                                        data-name="@item.Name"
+                                        onclick="toggleWishlist(event,this)">
+                                    @* filled heart *@
+                                    <svg width="15" height="15" viewBox="0 0 24 24" stroke-width="1.8"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </a>
+                        <div class="product-info">
+                            <p class="product-name">@item.Name</p>
+                            <p class="product-category">@item.Category</p>
+                            <p class="product-price">@item.Price грн</p>
+                            <a asp-controller="Home" asp-action="Details" asp-route-id="@item.Id" class="product-btn">
+                                Детальніше
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

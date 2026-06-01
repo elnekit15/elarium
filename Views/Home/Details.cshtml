@@ -1,0 +1,259 @@
+@model DesignerStore.Models.Product
+
+@{
+    // Порядок сортування розмірів
+    static int SzOrder(string s) => s switch
+    {
+        "XS" => 0, "S" => 1, "M" => 2, "L" => 3, "XL" => 4, "XXL" => 5, _ => 99
+    };
+
+    var stocks        = Model.SizeStocks.OrderBy(s => SzOrder(s.Size)).ThenBy(s => s.Size).ToList();
+    var hasStocks     = stocks.Any();
+    var allSoldOut    = hasStocks && stocks.All(s => s.Quantity == 0);
+    var cartError     = TempData["CartError"] as string;
+    var wishlistIds   = ViewBag.WishlistIds as HashSet<int> ?? new HashSet<int>();
+    var inWishlist    = wishlistIds.Contains(Model.Id);
+}
+
+<div class="container mt-5">
+    <div class="row">
+
+        @* Фото галерея *@
+        <div class="col-md-6 mb-4">
+            <div class="mb-2">
+            <button type="button" onclick="history.back()"
+                    class="btn-hdr" style="font-size:0.65rem;letter-spacing:1.5px;">
+                ← Назад
+            </button>
+        </div>
+
+        <div class="d-flex">
+                <div class="d-flex flex-column me-3 gallery-thumbnails" style="gap:10px;width:80px;">
+                    <img src="@Model.ImageUrl" class="img-thumbnail rounded-0 preview-img active-preview"
+                         style="cursor:pointer;object-fit:cover;height:100px;width:80px;"
+                         onclick="changeImage('@Model.ImageUrl', this)">
+                    @if (Model.Images?.Any() == true)
+                    {
+                        @foreach (var img in Model.Images)
+                        {
+                            <img src="@img.Url" class="img-thumbnail rounded-0 preview-img"
+                                 style="cursor:pointer;object-fit:cover;height:100px;width:80px;"
+                                 onclick="changeImage('@img.Url', this)">
+                        }
+                    }
+                </div>
+
+                <div id="image-zoom-container" class="flex-grow-1 border position-relative"
+                     style="overflow:hidden;cursor:crosshair;background:#f8f9fa;height:80vh;">
+                    @if (allSoldOut)
+                    {
+                        <div style="position:absolute;top:16px;left:16px;z-index:10;
+                                    background:#111;color:#fff;font-size:0.65rem;
+                                    letter-spacing:2px;padding:4px 10px;font-weight:600;">
+                            SOLD OUT
+                        </div>
+                    }
+                    <img id="main-product-image" src="@Model.ImageUrl" class="img-fluid w-100 h-100"
+                         style="object-fit:contain;transition:transform 0.1s ease;">
+                </div>
+            </div>
+        </div>
+
+        @* Інфо та форма *@
+        <div class="col-md-5 offset-md-1">
+            <h1 class="mb-2" style="font-weight:300;letter-spacing:2px;">@Model.Name</h1>
+            <h3 class="mb-4" style="font-weight:400;">@Model.Price грн</h3>
+
+            <p class="text-muted mb-4" style="line-height:1.8;">@Model.Description</p>
+
+            @if (!string.IsNullOrEmpty(cartError))
+            {
+                <div class="alert alert-danger rounded-0 py-2 small mb-3">@cartError</div>
+            }
+            <div id="cart-inline-error" class="alert alert-danger rounded-0 py-2 small mb-3" style="display:none;"></div>
+
+            <form asp-controller="Cart" asp-action="AddToCart" method="post" id="add-cart-form">
+                <input type="hidden" name="productId" value="@Model.Id" />
+                <input type="hidden" name="size" id="selected-size-input" value="" />
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label text-uppercase small mb-0" style="letter-spacing:1px;">Розмір</label>
+                        <span id="size-error" class="text-danger small" style="display:none;">Оберіть розмір</span>
+                    </div>
+
+                    @if (hasStocks)
+                    {
+                        <div class="d-flex flex-wrap gap-2" id="size-buttons">
+                            @foreach (var ss in stocks)
+                            {
+                                var soldOut = ss.Quantity == 0;
+                                <button type="button"
+                                        class="size-btn @(soldOut ? "size-btn--sold" : "")"
+                                        data-size="@ss.Size"
+                                        data-qty="@ss.Quantity"
+                                        @(soldOut ? "disabled=\"disabled\"" : "")
+                                        onclick="selectSize(this)">
+                                    @ss.Size
+                                    @if (soldOut)
+                                    {
+                                        <span class="size-sold-label">розпродано</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+
+                        <div id="low-stock-msg" class="mt-2 small" style="color:#c0392b;display:none;letter-spacing:0.5px;">
+                            ● Залишилось менше 5 шт — поспішайте
+                        </div>
+                    }
+                </div>
+
+                @if (!allSoldOut)
+                {
+                    <button type="button"
+                            class="btn btn-dark w-100 py-3 rounded-0 text-uppercase mt-2"
+                            style="letter-spacing:2px;"
+                            onclick="submitAddToCart()">
+                        Додати в кошик
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-secondary w-100 py-3 rounded-0 text-uppercase mt-2"
+                            style="letter-spacing:2px;" disabled>
+                        SOLD OUT
+                    </button>
+                }
+            </form>
+
+            <button type="button"
+                    class="wish-btn-text @(inWishlist ? "wish-btn-text--active" : "") mt-3"
+                    data-id="@Model.Id"
+                    data-name="@Model.Name"
+                    onclick="toggleWishlist(event,this)">
+                <svg width="15" height="15" viewBox="0 0 24 24" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <span>@(inWishlist ? "В обраному" : "Додати до обраного")</span>
+            </button>
+
+            <div class="mt-4 small text-muted">
+                <p>● Безкоштовна доставка від 5000 грн</p>
+                <p>● Повернення протягом 14 днів</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .preview-img { opacity:0.6; transition:0.3s; border:1px solid #ddd; padding:2px; }
+    .preview-img:hover, .active-preview { opacity:1; border-color:#000; background:#eee; }
+    .gallery-thumbnails { overflow-y:auto; max-height:80vh; }
+    .gallery-thumbnails::-webkit-scrollbar { width:0; background:transparent; }
+
+    .size-btn {
+        min-width: 52px;
+        height: 40px;
+        padding: 0 12px;
+        border: 1.5px solid #111;
+        background: #fff;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.1;
+    }
+    .size-btn:hover:not(:disabled) { background: #111; color: #fff; }
+    .size-btn.active { background: #111; color: #fff; }
+    .size-btn--sold {
+        border-color: #ccc;
+        color: #aaa;
+        cursor: not-allowed;
+        text-decoration: line-through;
+    }
+    .size-sold-label {
+        font-size: 0.52rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-decoration: none;
+        display: block;
+    }
+</style>
+
+<script>
+    function selectSize(btn) {
+        document.querySelectorAll('.size-btn:not(.size-btn--sold)').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('selected-size-input').value = btn.dataset.size;
+        document.getElementById('size-error').style.display = 'none';
+
+        // Показуємо попередження про малий залишок
+        const qty = parseInt(btn.dataset.qty);
+        const msg = document.getElementById('low-stock-msg');
+        if (msg) msg.style.display = (qty > 0 && qty < 5) ? 'block' : 'none';
+    }
+
+    async function submitAddToCart() {
+        const sizeInput = document.getElementById('selected-size-input');
+        // якщо є кнопки розмірів — вимагаємо вибору
+        if (document.getElementById('size-buttons') && !sizeInput.value) {
+            document.getElementById('size-error').style.display = 'inline';
+            return;
+        }
+
+        const errBox = document.getElementById('cart-inline-error');
+
+        const formData = new FormData();
+        formData.append('productId', '@Model.Id');
+        formData.append('size', sizeInput.value);
+
+        try {
+            const resp = await fetch('/Cart/AddToCart', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+
+            if (!resp.ok) throw new Error('network');
+
+            const data = await resp.json();
+            if (data.success) {
+                if (errBox) errBox.style.display = 'none';
+                showCartToast(data.productName, data.cartCount);
+            } else {
+                if (errBox) { errBox.textContent = data.error || 'Помилка'; errBox.style.display = 'block'; }
+            }
+        } catch {
+            // Fallback: звичайний сабміт форми
+            document.getElementById('add-cart-form').submit();
+        }
+    }
+
+    // ─── Зум ────────────────────────────────────────────
+    const container = document.getElementById('image-zoom-container');
+    const img = document.getElementById('main-product-image');
+
+    container.addEventListener('mousemove', e => {
+        const rect = container.getBoundingClientRect();
+        img.style.transformOrigin = `${(e.clientX - rect.left) / rect.width * 100}% ${(e.clientY - rect.top) / rect.height * 100}%`;
+        img.style.transform = 'scale(2.5)';
+    });
+    container.addEventListener('mouseleave', () => {
+        img.style.transformOrigin = 'center center';
+        img.style.transform = 'scale(1)';
+    });
+
+    function changeImage(url, element) {
+        document.getElementById('main-product-image').src = url;
+        document.querySelectorAll('.preview-img').forEach(i => i.classList.remove('active-preview'));
+        element.classList.add('active-preview');
+    }
+</script>

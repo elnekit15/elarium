@@ -1,0 +1,35 @@
+@{
+    var code = ViewData["StatusCode"] as int? ?? 404;
+    ViewData["Title"] = code == 404 ? "Сторінку не знайдено" : "Помилка " + code;
+}
+
+<div class="d-flex flex-column align-items-center justify-content-center text-center"
+     style="min-height:calc(100vh - var(--header-h));padding:4rem 1rem;">
+
+    <p class="mb-0" style="font-size:0.65rem;letter-spacing:4px;text-transform:uppercase;color:#bbb;">
+        E L A R I U M
+    </p>
+
+    <h1 style="font-size:clamp(5rem,18vw,12rem);font-weight:300;letter-spacing:-0.02em;
+               line-height:1;color:#111;margin:0.15em 0 0.1em;">
+        @code
+    </h1>
+
+    <p style="font-size:0.72rem;letter-spacing:3px;text-transform:uppercase;color:#aaa;margin-bottom:2.4rem;">
+        @(code == 404 ? "Сторінку не знайдено" : "Щось пішло не так")
+    </p>
+
+    <div class="d-flex gap-3 flex-wrap justify-content-center">
+        <a asp-controller="Home" asp-action="Index"
+           class="btn btn-dark rounded-0 px-5"
+           style="font-size:0.7rem;letter-spacing:2.5px;text-transform:uppercase;padding-top:0.65rem;padding-bottom:0.65rem;">
+            До колекції
+        </a>
+        <a asp-controller="Home" asp-action="Landing"
+           class="btn btn-outline-dark rounded-0 px-5"
+           style="font-size:0.7rem;letter-spacing:2.5px;text-transform:uppercase;padding-top:0.65rem;padding-bottom:0.65rem;">
+            На головну
+        </a>
+    </div>
+
+</div>

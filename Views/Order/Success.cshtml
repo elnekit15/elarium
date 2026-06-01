@@ -1,0 +1,65 @@
+@model DesignerStore.Models.Order
+@{ ViewData["Title"] = "Замовлення оформлено"; }
+
+<div class="container mt-5 mb-5" style="max-width:680px;">
+    <div class="text-center mb-5">
+        <div style="font-size:3rem;line-height:1;margin-bottom:1rem;">✓</div>
+        <h2 style="font-weight:300;letter-spacing:3px;">ДЯКУЄМО ЗА ЗАМОВЛЕННЯ</h2>
+        <p class="text-muted mt-2" style="font-size:0.85rem;">
+            Підтвердження надіслано на <strong>@Model.CustomerEmail</strong>
+        </p>
+    </div>
+
+    <div class="border p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-uppercase small" style="letter-spacing:2px;font-weight:600;">Замовлення #@Model.Id</span>
+            <span class="badge bg-success rounded-0 px-3 py-2" style="font-size:0.68rem;letter-spacing:1px;">ОПЛАЧЕНО</span>
+        </div>
+        <div class="text-muted small mb-3">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm") UTC</div>
+
+        <hr />
+
+        @foreach (var item in Model.Items)
+        {
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <img src="@item.ImageUrl" style="width:55px;height:70px;object-fit:cover;flex-shrink:0;" />
+                <div class="flex-grow-1" style="font-size:0.82rem;">
+                    <div style="font-weight:600;">@item.ProductName</div>
+                    <div class="text-muted">@item.Size · @item.Quantity шт.</div>
+                </div>
+                <div style="font-weight:600;font-size:0.82rem;">
+                    @(item.Price * item.Quantity) грн
+                </div>
+            </div>
+        }
+
+        <hr />
+        <div class="d-flex justify-content-between">
+            <span class="text-uppercase small" style="letter-spacing:1px;">Сума</span>
+            <strong>@Model.TotalAmount грн</strong>
+        </div>
+    </div>
+
+    <div class="border p-4 mb-4" style="font-size:0.83rem;">
+        <div class="row g-2">
+            <div class="col-4 text-muted text-uppercase small" style="letter-spacing:1px;">Отримувач</div>
+            <div class="col-8">@Model.CustomerName</div>
+            <div class="col-4 text-muted text-uppercase small" style="letter-spacing:1px;">Телефон</div>
+            <div class="col-8">@Model.CustomerPhone</div>
+            <div class="col-4 text-muted text-uppercase small" style="letter-spacing:1px;">Доставка</div>
+            <div class="col-8">@Model.City, @Model.Address</div>
+        </div>
+    </div>
+
+    <div class="text-center d-flex flex-column align-items-center gap-3">
+        <a asp-controller="Home" asp-action="Landing" class="btn btn-dark rounded-0 px-5" style="letter-spacing:2px;font-size:0.72rem;">
+            ПРОДОВЖИТИ ПОКУПКИ
+        </a>
+        <a asp-controller="Order" asp-action="Track" class="text-muted small text-decoration-none">
+            Відстежити замовлення →
+        </a>
+        <p class="text-muted small mt-1 mb-0">
+            Для відстеження вкажіть номер <strong>#@Model.Id</strong> та email <strong>@Model.CustomerEmail</strong>
+        </p>
+    </div>
+</div>
