@@ -114,6 +114,8 @@ public class OrderController : Controller
     // ─── WayForPay return (redirect after payment) ────────────────
 
     [HttpGet]
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> WayForPayReturn(
         string orderReference, string transactionStatus,
         string amount, string currency, string authCode,
@@ -156,9 +158,38 @@ public class OrderController : Controller
     }
 
     // WayForPay server-to-server callback (service URL)
+    // Має повернути JSON-підтвердження з підписом, інакше WayForPay ретраїть запит
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public IActionResult WayForPayCallback() => Ok("OK");
+    public async Task<IActionResult> WayForPayCallback()
+    {
+        string orderReference = "";
+        try
+        {
+            if (Request.HasFormContentType)
+            {
+                orderReference = Request.Form["orderReference"].ToString();
+            }
+            else
+            {
+                using var reader = new StreamReader(Request.Body);
+                var body = await reader.ReadToEndAsync();
+                if (!string.IsNullOrWhiteSpace(body))
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("orderReference", out var or))
+                        orderReference = or.GetString() ?? "";
+                }
+            }
+        }
+        catch { /* ігноруємо помилки парсингу — все одно відповідаємо accept */ }
+
+        var time      = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var status    = "accept";
+        var signature = _wfp.Sign(orderReference, status, time.ToString());
+
+        return Json(new { orderReference, status, time, signature });
+    }
 
     public async Task<IActionResult> Success(string session_id, int order_id)
     {
