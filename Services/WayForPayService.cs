@@ -60,12 +60,13 @@ public class WayForPayService
         var productPrices = items.Select(i => Fmt(i.Price)).ToList();
         var productCounts = items.Select(i => i.Quantity.ToString()).ToList();
 
-        // Signature: merchantAccount;domain;orderRef;orderDate;amount;currency;names...;prices...;counts...
+        // Signature (порядок строго за докою WayForPay):
+        // merchantAccount;domain;orderRef;orderDate;amount;currency;names...;counts...;prices...
         var sigParts = new List<string>
             { MerchantAccount, MerchantDomainName, orderRef, orderDate, amount, currency };
         sigParts.AddRange(productNames);
-        sigParts.AddRange(productPrices);
         sigParts.AddRange(productCounts);
+        sigParts.AddRange(productPrices);
         var signature = Sign(sigParts.ToArray());
 
         var fields = new List<(string, string)>
