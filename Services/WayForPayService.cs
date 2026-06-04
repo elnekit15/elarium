@@ -9,8 +9,13 @@ public class WayForPayService
     public const string PaymentUrl = "https://secure.wayforpay.com/pay";
 
     private readonly IConfiguration _config;
+    private readonly ILogger<WayForPayService> _logger;
 
-    public WayForPayService(IConfiguration config) => _config = config;
+    public WayForPayService(IConfiguration config, ILogger<WayForPayService> logger)
+    {
+        _config = config;
+        _logger = logger;
+    }
 
     public string MerchantAccount    => _config["WayForPay:MerchantAccount"]    ?? "";
     public string MerchantSecretKey  => _config["WayForPay:MerchantSecretKey"]  ?? "";
@@ -20,8 +25,11 @@ public class WayForPayService
     public string Sign(params string[] parts)
     {
         var message = string.Join(";", parts);
+        _logger.LogInformation("🔐 WayForPay підпис рядок: {Message}", message);
         using var hmac = new HMACMD5(Encoding.UTF8.GetBytes(MerchantSecretKey));
-        return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(message))).ToLower();
+        var result = Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(message))).ToLower();
+        _logger.LogInformation("🔐 WayForPay підпис результат: {Sig}", result);
+        return result;
     }
 
     // Verify return signature from WayForPay redirect
@@ -64,7 +72,6 @@ public class WayForPayService
             ("merchantAccount",              MerchantAccount),
             ("merchantAuthType",             "simpleSignature"),
             ("merchantDomainName",           MerchantDomainName),
-            ("merchantTransactionSecureType","AUTO"),
             ("orderReference",               orderRef),
             ("orderDate",                    orderDate),
             ("amount",                       amount),

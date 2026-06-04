@@ -335,7 +335,7 @@ a.btn-hdr, button.btn-hdr { color: #111 !important; }
     font-size: 0.68rem;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #888;
+    color: #222;
 }
 
 .product-img-link {
@@ -592,8 +592,8 @@ a.btn-hdr, button.btn-hdr { color: #111 !important; }
     font-size: 0.68rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #888;
-    border: 1px solid #ccc;
+    color: #222;
+    border: 1px solid #aaa;
     background: transparent;
     padding: 6px 14px;
     cursor: pointer;
@@ -676,6 +676,14 @@ a.btn-hdr, button.btn-hdr { color: #111 !important; }
     text-transform: uppercase;
     color: #999;
     margin-bottom: 0.75rem;
+}
+.filter-group-subtitle {
+    font-size: 0.58rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #bbb;
+    margin-top: 0.75rem;
+    margin-bottom: 0.4rem;
 }
 .filter-radio-list {
     display: flex;
@@ -950,9 +958,9 @@ a.contacts-value:hover { color: #666; }
     font-size: 0.68rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #999;
+    color: #333;
     text-decoration: none;
-    border-bottom: 1px solid transparent;
+    border-bottom: 1px solid #aaa;
     padding-bottom: 2px;
     transition: color 0.2s, border-color 0.2s;
 }
@@ -1189,8 +1197,12 @@ a.contacts-value:hover { color: #666; }
     transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
     pointer-events: none;
     border-left: 2px solid #fff;
+    text-decoration: none;
+    cursor: pointer;
 }
-.cart-toast.show { transform: translateX(0); }
+.cart-toast.show { transform: translateX(0); pointer-events: auto; }
+.cart-toast:hover { background: #222; color: #fff; text-decoration: none; }
+.cart-toast, .cart-toast:visited, .cart-toast:focus { color: #fff; text-decoration: none; }
 
 .cart-toast-icon { flex-shrink: 0; opacity: 0.85; }
 

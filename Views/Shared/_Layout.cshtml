@@ -183,7 +183,7 @@
     </div>
 
     @* Cart toast notification *@
-    <div id="cart-toast" class="cart-toast" role="status" aria-live="polite">
+    <a id="cart-toast" class="cart-toast" href="/Cart/Index" role="status" aria-live="polite">
         <svg class="cart-toast-icon" width="17" height="17" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
@@ -194,7 +194,11 @@
             <div class="cart-toast-title">Додано в кошик</div>
             <div class="cart-toast-name" id="cart-toast-name"></div>
         </div>
-    </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)"
+             stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-left:auto;">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

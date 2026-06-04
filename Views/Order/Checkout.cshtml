@@ -29,7 +29,9 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label asp-for="Phone" class="form-label small text-uppercase">Телефон</label>
-                        <input asp-for="Phone" class="form-control rounded-0" placeholder="+380 xx xxx xx xx" />
+                        <input asp-for="Phone" type="tel" inputmode="tel"
+                               class="form-control rounded-0" placeholder="+380 xx xxx xx xx"
+                               oninput="this.value=this.value.replace(/[^\d\+\-\(\)\s]/g,'')" />
                         <span asp-validation-for="Phone" class="text-danger small"></span>
                     </div>
                 </div>

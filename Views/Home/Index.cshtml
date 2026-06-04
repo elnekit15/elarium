@@ -176,6 +176,17 @@
                     </label>
                 }
             </div>
+            <div class="filter-group-subtitle">Взуття</div>
+            <div class="size-btn-group mt-1">
+                @foreach (var s in new[] { "36","37","38","39","40","41","42","43","44","45","46" })
+                {
+                    bool isChecked = cSize == s;
+                    <label class="size-btn-label">
+                        <input type="radio" name="size" value="@s" @(isChecked ? "checked" : "")>
+                        <span>@s</span>
+                    </label>
+                }
+            </div>
         </div>
 
         <div class="filter-footer">

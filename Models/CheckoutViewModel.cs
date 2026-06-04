@@ -16,7 +16,7 @@ public class CheckoutViewModel
 
     [Required(ErrorMessage = "Введіть телефон")]
     [MaxLength(30)]
-    [NoHtml]
+    [RegularExpression(@"^[\d\+\-\(\)\s]+$", ErrorMessage = "Телефон може містити лише цифри, +, -, пробіли та дужки")]
     public string Phone { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Введіть місто")]
