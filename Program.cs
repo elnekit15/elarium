@@ -2,6 +2,7 @@ using DesignerStore.Data;
 using DesignerStore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +58,16 @@ if (!string.IsNullOrWhiteSpace(googleId) && !string.IsNullOrWhiteSpace(googleSec
 }
 
 var app = builder.Build();
+
+// За проксі Railway оригінальний запит — HTTPS. Застосовуємо X-Forwarded-Proto,
+// щоб Request.Scheme був https (інакше Google OAuth redirect_uri генерується як http → redirect_uri_mismatch)
+var forwardedOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedOptions);
 
 if (!app.Environment.IsDevelopment())
 {
