@@ -55,7 +55,6 @@ public class WayForPayService
         var amount    = Fmt(order.TotalAmount);
         var currency  = "UAH";
 
-        // Лапки і крапка з комою ламають підпис WayForPay — прибираємо
         var productNames  = items.Select(i => i.Name.Replace("\"", "").Replace("'", "").Replace(";", "")).ToList();
         var productPrices = items.Select(i => Fmt(i.Price)).ToList();
         var productCounts = items.Select(i => i.Quantity.ToString()).ToList();

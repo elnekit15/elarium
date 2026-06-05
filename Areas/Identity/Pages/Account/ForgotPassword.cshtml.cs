@@ -44,11 +44,16 @@ public class ForgotPasswordModel : PageModel
         var code = await _userManager.GeneratePasswordResetTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
+        // Завжди генеруємо https-посилання (за Railway-проксі Request.Scheme може бути http)
+        var scheme = Request.Headers.ContainsKey("X-Forwarded-Proto")
+            ? Request.Headers["X-Forwarded-Proto"].ToString().Split(',')[0].Trim()
+            : Request.Scheme;
+
         var callbackUrl = Url.Page(
             "/Account/ResetPassword",
             pageHandler: null,
             values: new { area = "Identity", code },
-            protocol: Request.Scheme)!;
+            protocol: scheme)!;
 
         await _emailSender.SendPasswordResetLinkAsync(
             user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
