@@ -121,6 +121,13 @@ public class OrderController : Controller
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> WayForPayReturn()
     {
+        // Діагностика — логуємо все що прийшло від WayForPay
+        if (Request.HasFormContentType)
+            _logger.LogInformation("↩️ WFP Return FORM: {Keys}",
+                string.Join(" | ", Request.Form.Select(kv => $"{kv.Key}={kv.Value}")));
+        if (Request.Query.Any())
+            _logger.LogInformation("↩️ WFP Return QUERY: {Q}", Request.QueryString.Value);
+
         // Гнучке читання параметрів — WayForPay шле POST-форму, але fallback на query
         string Param(string key) =>
             (Request.HasFormContentType && Request.Form.ContainsKey(key)) ? Request.Form[key].ToString()
@@ -131,13 +138,13 @@ public class OrderController : Controller
         var transactionStatus = Param("transactionStatus");
         var authCode          = Param("authCode");
 
-        _logger.LogInformation("↩️ WayForPayReturn: orderRef={Ref}, status={Status}",
-            orderReference, transactionStatus);
-
         if (string.IsNullOrEmpty(orderReference)
             || !orderReference.StartsWith("ELARIUM-")
             || !int.TryParse(orderReference["ELARIUM-".Length..], out var orderId))
+        {
+            _logger.LogWarning("↩️ WFP Return: невалідний orderReference='{Ref}'", orderReference);
             return RedirectToAction("Index", "Cart");
+        }
 
         var order = await _context.Orders
             .Include(o => o.Items)
@@ -145,14 +152,29 @@ public class OrderController : Controller
 
         if (order == null) return NotFound();
 
-        // Позначаємо оплаченим, якщо статус успішний (порожній statuc != Declined → для тестового мерчанта)
+        // Оновлюємо БД (сток + статус) — працює незалежно від cookie/сесії
         if (transactionStatus != "Declined" && transactionStatus != "Expired"
             && transactionStatus != "Refunded")
         {
             await MarkOrderPaidAsync(order, authCode);
         }
 
-        // Кошик чистимо тут (у callback немає сесії користувача)
+        // Redirect на first-party GET — браузер піде з cookie користувача,
+        // тоді зможемо почистити кошик з його сесії
+        return RedirectToAction("WayForPaySuccess", new { id = order.Id });
+    }
+
+    // First-party GET після оплати WayForPay — тут є сесія користувача
+    [HttpGet]
+    public async Task<IActionResult> WayForPaySuccess(int id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order == null) return NotFound();
+
+        // Тепер ми у first-party GET — cookie сесії доступний, чистимо кошик
         HttpContext.Session.Remove("Cart");
 
         return View("Success", order);
