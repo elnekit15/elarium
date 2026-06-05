@@ -152,16 +152,20 @@ public class OrderController : Controller
 
         if (order == null) return NotFound();
 
-        // Оновлюємо БД (сток + статус) — працює незалежно від cookie/сесії
-        if (transactionStatus != "Declined" && transactionStatus != "Expired"
-            && transactionStatus != "Refunded")
+        // Оплата успішна ТІЛЬКИ при статусі Approved
+        if (transactionStatus == "Approved")
         {
             await MarkOrderPaidAsync(order, authCode);
+            // Redirect на first-party GET — там почистимо кошик з сесії користувача
+            return RedirectToAction("WayForPaySuccess", new { id = order.Id });
         }
 
-        // Redirect на first-party GET — браузер піде з cookie користувача,
-        // тоді зможемо почистити кошик з його сесії
-        return RedirectToAction("WayForPaySuccess", new { id = order.Id });
+        // Оплата не пройшла (Declined / Expired / тощо) — показуємо причину, ведемо в кошик
+        var reason = Param("reason");
+        TempData["Error"] = string.IsNullOrEmpty(reason)
+            ? "Оплата не пройшла. Спробуйте ще раз або іншою карткою."
+            : $"Оплата не пройшла: {reason}. Спробуйте іншою карткою.";
+        return RedirectToAction("Index", "Cart");
     }
 
     // First-party GET після оплати WayForPay — тут є сесія користувача

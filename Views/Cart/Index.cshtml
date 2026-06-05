@@ -4,6 +4,13 @@
     <h2 class="mb-4" style="font-weight:300;letter-spacing:2px;">ВАШ КОШИК</h2>
     <hr />
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-0 border-0" style="background:#fce4ec;color:#c62828;font-size:0.85rem;letter-spacing:0.5px;">
+            @TempData["Error"]
+        </div>
+    }
+
     @if (!Model.Any())
     {
         <div class="text-center py-5">
