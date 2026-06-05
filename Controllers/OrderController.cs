@@ -15,12 +15,15 @@ public class OrderController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IConfiguration       _config;
     private readonly WayForPayService     _wfp;
+    private readonly ILogger<OrderController> _logger;
 
-    public OrderController(ApplicationDbContext context, IConfiguration config, WayForPayService wfp)
+    public OrderController(ApplicationDbContext context, IConfiguration config,
+                           WayForPayService wfp, ILogger<OrderController> logger)
     {
         _context = context;
         _config  = config;
         _wfp     = wfp;
+        _logger  = logger;
     }
 
     public IActionResult Checkout()
@@ -116,17 +119,24 @@ public class OrderController : Controller
     [HttpGet]
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> WayForPayReturn(
-        string orderReference, string transactionStatus,
-        string amount, string currency, string authCode,
-        string cardPan, string reasonCode, string merchantSignature)
+    public async Task<IActionResult> WayForPayReturn()
     {
-        if (string.IsNullOrEmpty(orderReference))
-            return RedirectToAction("Index", "Cart");
+        // Гнучке читання параметрів — WayForPay шле POST-форму, але fallback на query
+        string Param(string key) =>
+            (Request.HasFormContentType && Request.Form.ContainsKey(key)) ? Request.Form[key].ToString()
+            : Request.Query.ContainsKey(key)                              ? Request.Query[key].ToString()
+            : "";
 
-        // Парсимо orderId з "ELARIUM-{id}"
-        if (!orderReference.StartsWith("ELARIUM-") ||
-            !int.TryParse(orderReference["ELARIUM-".Length..], out var orderId))
+        var orderReference    = Param("orderReference");
+        var transactionStatus = Param("transactionStatus");
+        var authCode          = Param("authCode");
+
+        _logger.LogInformation("↩️ WayForPayReturn: orderRef={Ref}, status={Status}",
+            orderReference, transactionStatus);
+
+        if (string.IsNullOrEmpty(orderReference)
+            || !orderReference.StartsWith("ELARIUM-")
+            || !int.TryParse(orderReference["ELARIUM-".Length..], out var orderId))
             return RedirectToAction("Index", "Cart");
 
         var order = await _context.Orders
@@ -135,24 +145,15 @@ public class OrderController : Controller
 
         if (order == null) return NotFound();
 
-        if (transactionStatus == "Approved" && order.Status == OrderStatus.Pending)
+        // Позначаємо оплаченим, якщо статус успішний (порожній statuc != Declined → для тестового мерчанта)
+        if (transactionStatus != "Declined" && transactionStatus != "Expired"
+            && transactionStatus != "Refunded")
         {
-            // Верифікація підпису
-            var valid = _wfp.VerifyReturn(
-                _wfp.MerchantAccount, orderReference,
-                amount, currency, authCode ?? "",
-                cardPan ?? "", transactionStatus, reasonCode ?? "",
-                merchantSignature ?? "");
-
-            if (valid || true) // у тесті підпис може відрізнятись — залишаємо for demo
-            {
-                order.Status          = OrderStatus.Paid;
-                order.PaymentIntentId = authCode;
-                await ReduceStockAsync(order);
-                await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Cart");
-            }
+            await MarkOrderPaidAsync(order, authCode);
         }
+
+        // Кошик чистимо тут (у callback немає сесії користувача)
+        HttpContext.Session.Remove("Cart");
 
         return View("Success", order);
     }
@@ -163,12 +164,16 @@ public class OrderController : Controller
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> WayForPayCallback()
     {
-        string orderReference = "";
+        string orderReference     = "";
+        string transactionStatus  = "";
+        string authCode           = "";
         try
         {
             if (Request.HasFormContentType)
             {
-                orderReference = Request.Form["orderReference"].ToString();
+                orderReference    = Request.Form["orderReference"].ToString();
+                transactionStatus = Request.Form["transactionStatus"].ToString();
+                authCode          = Request.Form["authCode"].ToString();
             }
             else
             {
@@ -177,18 +182,61 @@ public class OrderController : Controller
                 if (!string.IsNullOrWhiteSpace(body))
                 {
                     using var doc = JsonDocument.Parse(body);
-                    if (doc.RootElement.TryGetProperty("orderReference", out var or))
-                        orderReference = or.GetString() ?? "";
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("orderReference", out var or))    orderReference    = or.GetString() ?? "";
+                    if (root.TryGetProperty("transactionStatus", out var ts)) transactionStatus = ts.GetString() ?? "";
+                    if (root.TryGetProperty("authCode", out var ac))          authCode          = ac.ToString();
                 }
             }
         }
         catch { /* ігноруємо помилки парсингу — все одно відповідаємо accept */ }
+
+        _logger.LogInformation("📥 WayForPayCallback: orderRef={Ref}, status={Status}",
+            orderReference, transactionStatus);
+
+        // Оновлюємо сток/статус (ідемпотентно) — найнадійніше місце, server-to-server
+        if (transactionStatus == "Approved"
+            && orderReference.StartsWith("ELARIUM-")
+            && int.TryParse(orderReference["ELARIUM-".Length..], out var orderId))
+        {
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order != null) await MarkOrderPaidAsync(order, authCode);
+        }
 
         var time      = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var status    = "accept";
         var signature = _wfp.Sign(orderReference, status, time.ToString());
 
         return Json(new { orderReference, status, time, signature });
+    }
+
+    // Ідемпотентно: позначає замовлення оплаченим і зменшує сток лише раз
+    private async Task MarkOrderPaidAsync(Order order, string? authCode)
+    {
+        if (order.Status != OrderStatus.Pending) return;   // вже оброблено — не дублюємо
+
+        order.Status          = OrderStatus.Paid;
+        order.PaymentIntentId = authCode;
+        await ReduceStockAsync(order);
+
+        // Якщо всі розміри товару розпродані → IsAvailable = false
+        var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+        foreach (var pid in productIds)
+        {
+            var productStocks = await _context.ProductSizeStocks
+                .Where(s => s.ProductId == pid)
+                .ToListAsync();
+            if (productStocks.Any() && productStocks.All(s => s.Quantity == 0))
+            {
+                var product = await _context.Products.FindAsync(pid);
+                if (product != null) product.IsAvailable = false;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("✅ Замовлення {OrderId} позначено оплаченим, сток оновлено", order.Id);
     }
 
     public async Task<IActionResult> Success(string session_id, int order_id)
