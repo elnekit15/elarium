@@ -31,7 +31,17 @@ public class OrderController : Controller
         var cart = GetCart();
         if (!cart.Any()) return RedirectToAction("Index", "Cart");
         ViewBag.Cart = cart;
-        return View(new CheckoutViewModel());
+
+        // Для авторизованих — підставляємо email акаунту одразу
+        var model = new CheckoutViewModel();
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            model.Email = User.FindFirstValue(ClaimTypes.Email)
+                          ?? User.FindFirstValue(ClaimTypes.Name)
+                          ?? string.Empty;
+        }
+
+        return View(model);
     }
 
     [HttpPost]
@@ -47,10 +57,18 @@ public class OrderController : Controller
             return View(model);
         }
 
+        // Якщо користувач авторизований — використовуємо email акаунту,
+        // щоб замовлення відображалось у "Мої замовлення"
+        var accountEmail = User.Identity?.IsAuthenticated == true
+            ? (User.FindFirstValue(ClaimTypes.Email)
+               ?? User.FindFirstValue(ClaimTypes.Name)
+               ?? model.Email)
+            : model.Email;
+
         var order = new Order
         {
             CustomerName  = model.Name,
-            CustomerEmail = model.Email,
+            CustomerEmail = accountEmail,
             CustomerPhone = model.Phone,
             City          = model.City,
             Address       = model.Address,

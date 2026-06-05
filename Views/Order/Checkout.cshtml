@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Оформлення замовлення";
     var cart = ViewBag.Cart as List<DesignerStore.Models.CartItem> ?? new();
+    var isAuth = User.Identity?.IsAuthenticated == true;
 }
 
 <div class="container mt-5 mb-5">
@@ -24,7 +25,15 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label asp-for="Email" class="form-label small text-uppercase">Email</label>
-                        <input asp-for="Email" type="email" class="form-control rounded-0" placeholder="email@example.com" />
+                        @if (isAuth)
+                        {
+                            <input asp-for="Email" type="email" class="form-control rounded-0 bg-light" readonly
+                                   title="Email вашого акаунту" />
+                        }
+                        else
+                        {
+                            <input asp-for="Email" type="email" class="form-control rounded-0" placeholder="email@example.com" />
+                        }
                         <span asp-validation-for="Email" class="text-danger small"></span>
                     </div>
                     <div class="col-md-6 mb-3">
